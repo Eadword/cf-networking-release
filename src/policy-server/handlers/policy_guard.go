@@ -24,6 +24,13 @@ func (g *PolicyGuard) CheckAccess(policies []store.Policy, userToken uaa_client.
 			return true, nil
 		}
 	}
+
+	for _, policy := range policies {
+		if policy.Destination.Type == "ip" {
+			return false, nil
+		}
+	}
+
 	token, err := g.UAAClient.GetToken()
 	if err != nil {
 		return false, fmt.Errorf("getting token: %s", err)

@@ -149,6 +149,54 @@ var _ = Describe("PolicyGuard", func() {
 			Expect(authorized).To(BeTrue())
 		})
 
+		Context("when the user is attempting to create an egress policy", func() {
+			var (
+				egressPolicies []store.Policy
+			)
+
+			BeforeEach(func() {
+				egressPolicies = []store.Policy{
+					{
+						Source: store.Source{
+							Type: "app",
+							ID:   "some-app-guid",
+						},
+						Destination: store.Destination{
+							Type: "ip",
+						},
+					},
+				}
+			})
+
+			Context("when the token has network.admin scope", func() {
+				BeforeEach(func() {
+					tokenData = uaa_client.CheckTokenResponse{
+						Scope: []string{"network.admin"},
+					}
+				})
+
+				It("returns successfully without making extra calls to UAA or CC", func() {
+					authorized, err := policyGuard.CheckAccess(egressPolicies, tokenData)
+					Expect(err).NotTo(HaveOccurred())
+					Expect(fakeUAAClient.GetTokenCallCount()).To(Equal(0))
+					Expect(fakeCCClient.GetSpaceCallCount()).To(Equal(0))
+					Expect(fakeCCClient.GetUserSpaceCallCount()).To(Equal(0))
+					Expect(authorized).To(BeTrue())
+				})
+			})
+
+			Context("when the token does not have network.admin scope", func() {
+				It("returns false", func() {
+					authorized, err := policyGuard.CheckAccess(egressPolicies, tokenData)
+					Expect(err).NotTo(HaveOccurred())
+					Expect(fakeUAAClient.GetTokenCallCount()).To(Equal(0))
+					Expect(fakeCCClient.GetSpaceGUIDsCallCount()).To(Equal(0))
+					Expect(fakeCCClient.GetUserSpaceCallCount()).To(Equal(0))
+					Expect(authorized).To(BeFalse())
+				})
+			})
+		})
+
 		Context("when the token has network.admin scope", func() {
 			BeforeEach(func() {
 				tokenData = uaa_client.CheckTokenResponse{

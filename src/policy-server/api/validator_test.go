@@ -36,6 +36,32 @@ var _ = Describe("Validator", func() {
 			Expect(err).NotTo(HaveOccurred())
 		})
 
+		It("does not error for valid egress policies", func() {
+			policies := []api.Policy{
+				api.Policy{
+					Source: api.Source{
+						Type: "app",
+						ID:   "some-source-id",
+					},
+					Destination: api.Destination{
+						Type: "ip",
+						IPs: []api.IPRange{{
+							Start: "1.4.6.8",
+							End:   "1.4.6.8",
+						}},
+						Protocol: "tcp",
+						Ports: api.Ports{
+							Start: 42,
+							End:   123,
+						},
+					},
+				},
+			}
+
+			err := validator.ValidatePolicies(policies)
+			Expect(err).NotTo(HaveOccurred())
+		})
+
 		Context("when the policies list is nil", func() {
 			It("returns a useful error", func() {
 				err := validator.ValidatePolicies(nil)

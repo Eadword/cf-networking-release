@@ -63,14 +63,28 @@ func (p *Policy) asStorePolicy() store.Policy {
 	if p.Destination.Ports.Start == p.Destination.Ports.End {
 		port = p.Destination.Ports.Start
 	}
+
+	var destinationIPRange []store.IPRange
+	if len(p.Destination.IPs) > 0 {
+		destinationIPRange = []store.IPRange{
+			{
+				Start: p.Destination.IPs[0].Start,
+				End:   p.Destination.IPs[0].End,
+			},
+		}
+	}
+
 	return store.Policy{
 		Source: store.Source{
-			ID:  p.Source.ID,
-			Tag: p.Source.Tag,
+			ID:   p.Source.ID,
+			Tag:  p.Source.Tag,
+			Type: p.Source.Type,
 		},
 		Destination: store.Destination{
 			ID:       p.Destination.ID,
 			Tag:      p.Destination.Tag,
+			Type:     p.Destination.Type,
+			IPs:      destinationIPRange,
 			Protocol: p.Destination.Protocol,
 			Port:     port,
 			Ports: store.Ports{
@@ -101,8 +115,8 @@ func mapStorePolicy(storePolicy store.Policy) Policy {
 
 func MapStoreTag(tag store.Tag) Tag {
 	return Tag{
-		ID:  tag.ID,
-		Tag: tag.Tag,
+		ID:   tag.ID,
+		Tag:  tag.Tag,
 		Type: tag.Type,
 	}
 }

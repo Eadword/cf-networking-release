@@ -114,6 +114,70 @@ var _ = Describe("ApiPolicyMapper", func() {
 			}))
 		})
 
+		Context("when mapping an egress policy", func() {
+			It("maps a payload with api.Policy to a slice of store.Policy", func() {
+				storePolicies, err := mapper.AsStorePolicy(
+					[]byte(`{
+					"policies": [{
+						"source": { "type": "app", "id": "some-src-id" },
+						"destination": {
+							"type": "ip",
+							"protocol": "some-protocol",
+							"ips": [{
+								"start": "1.2.3.4",
+								"end": "1.2.3.5"
+							}],
+							"ports": {
+								"start": 8080,
+								"end": 9090
+							}
+						}
+					}]
+				}`),
+				)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(fakeValidator.ValidatePoliciesCallCount()).To(Equal(1))
+				Expect(fakeValidator.ValidatePoliciesArgsForCall(0)).To(Equal(
+					[]api.Policy{
+						{
+							Source: api.Source{Type: "app", ID: "some-src-id", Tag: ""},
+							Destination: api.Destination{
+								Type:     "ip",
+								Protocol: "some-protocol",
+								IPs: []api.IPRange{
+									{
+										Start: "1.2.3.4",
+										End:   "1.2.3.5",
+									},
+								},
+								Ports: api.Ports{Start: 8080, End: 9090},
+							},
+						},
+					},
+				))
+				Expect(storePolicies).To(Equal([]store.Policy{
+					{
+						Source: store.Source{Type: "app", ID: "some-src-id"},
+						Destination: store.Destination{
+							Type:     "ip",
+							Protocol: "some-protocol",
+							IPs: []store.IPRange{
+								{
+									Start: "1.2.3.4",
+									End:   "1.2.3.5",
+								},
+							},
+							Port: 0,
+							Ports: store.Ports{
+								Start: 8080,
+								End:   9090,
+							},
+						},
+					},
+				}))
+			})
+		})
+
 		Context("when unmarshalling fails", func() {
 			BeforeEach(func() {
 				fakeUnmarshaler.UnmarshalReturns(errors.New("banana"))

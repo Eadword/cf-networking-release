@@ -4,7 +4,7 @@ import "policy-server/db"
 
 //go:generate counterfeiter -o fakes/destination_repo.go --fake-name DestinationRepo . DestinationRepo
 type DestinationRepo interface {
-	Create(db.Transaction, int, int, int, int, string) (int, error)
+	Create(db.Transaction, int, int, int, int, string, []IPRange) (int, error)
 	Delete(db.Transaction, int) error
 	GetID(db.Transaction, int, int, int, int, string) (int, error)
 	CountWhereGroupID(db.Transaction, int) (int, error)
@@ -13,7 +13,8 @@ type DestinationRepo interface {
 type DestinationTable struct {
 }
 
-func (d *DestinationTable) Create(tx db.Transaction, destinationGroupId, port, startPort, endPort int, protocol string) (int, error) {
+func (d *DestinationTable) Create(tx db.Transaction, destinationGroupId, port, startPort, endPort int,
+	protocol string, ips []IPRange) (int, error) {
 	dualStatement := ""
 	if tx.DriverName() == "mysql" {
 		dualStatement = " FROM DUAL "

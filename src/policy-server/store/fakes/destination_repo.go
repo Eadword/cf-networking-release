@@ -8,7 +8,7 @@ import (
 )
 
 type DestinationRepo struct {
-	CreateStub        func(db.Transaction, int, int, int, int, string) (int, error)
+	CreateStub        func(db.Transaction, int, int, int, int, string, []store.IPRange) (int, error)
 	createMutex       sync.RWMutex
 	createArgsForCall []struct {
 		arg1 db.Transaction
@@ -17,6 +17,7 @@ type DestinationRepo struct {
 		arg4 int
 		arg5 int
 		arg6 string
+		arg7 []store.IPRange
 	}
 	createReturns struct {
 		result1 int
@@ -74,7 +75,12 @@ type DestinationRepo struct {
 	invocationsMutex sync.RWMutex
 }
 
-func (fake *DestinationRepo) Create(arg1 db.Transaction, arg2 int, arg3 int, arg4 int, arg5 int, arg6 string) (int, error) {
+func (fake *DestinationRepo) Create(arg1 db.Transaction, arg2 int, arg3 int, arg4 int, arg5 int, arg6 string, arg7 []store.IPRange) (int, error) {
+	var arg7Copy []store.IPRange
+	if arg7 != nil {
+		arg7Copy = make([]store.IPRange, len(arg7))
+		copy(arg7Copy, arg7)
+	}
 	fake.createMutex.Lock()
 	ret, specificReturn := fake.createReturnsOnCall[len(fake.createArgsForCall)]
 	fake.createArgsForCall = append(fake.createArgsForCall, struct {
@@ -84,11 +90,12 @@ func (fake *DestinationRepo) Create(arg1 db.Transaction, arg2 int, arg3 int, arg
 		arg4 int
 		arg5 int
 		arg6 string
-	}{arg1, arg2, arg3, arg4, arg5, arg6})
-	fake.recordInvocation("Create", []interface{}{arg1, arg2, arg3, arg4, arg5, arg6})
+		arg7 []store.IPRange
+	}{arg1, arg2, arg3, arg4, arg5, arg6, arg7Copy})
+	fake.recordInvocation("Create", []interface{}{arg1, arg2, arg3, arg4, arg5, arg6, arg7Copy})
 	fake.createMutex.Unlock()
 	if fake.CreateStub != nil {
-		return fake.CreateStub(arg1, arg2, arg3, arg4, arg5, arg6)
+		return fake.CreateStub(arg1, arg2, arg3, arg4, arg5, arg6, arg7)
 	}
 	if specificReturn {
 		return ret.result1, ret.result2
@@ -102,10 +109,10 @@ func (fake *DestinationRepo) CreateCallCount() int {
 	return len(fake.createArgsForCall)
 }
 
-func (fake *DestinationRepo) CreateArgsForCall(i int) (db.Transaction, int, int, int, int, string) {
+func (fake *DestinationRepo) CreateArgsForCall(i int) (db.Transaction, int, int, int, int, string, []store.IPRange) {
 	fake.createMutex.RLock()
 	defer fake.createMutex.RUnlock()
-	return fake.createArgsForCall[i].arg1, fake.createArgsForCall[i].arg2, fake.createArgsForCall[i].arg3, fake.createArgsForCall[i].arg4, fake.createArgsForCall[i].arg5, fake.createArgsForCall[i].arg6
+	return fake.createArgsForCall[i].arg1, fake.createArgsForCall[i].arg2, fake.createArgsForCall[i].arg3, fake.createArgsForCall[i].arg4, fake.createArgsForCall[i].arg5, fake.createArgsForCall[i].arg6, fake.createArgsForCall[i].arg7
 }
 
 func (fake *DestinationRepo) CreateReturns(result1 int, result2 error) {

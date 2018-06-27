@@ -6,8 +6,9 @@ type Policy struct {
 }
 
 type Source struct {
-	ID  string
-	Tag string
+	ID   string
+	Tag  string
+	Type string
 }
 
 type Destination struct {
@@ -16,6 +17,13 @@ type Destination struct {
 	Protocol string
 	Port     int
 	Ports    Ports
+	Type     string
+	IPs      []IPRange
+}
+
+type IPRange struct {
+	Start string
+	End   string
 }
 
 type Ports struct {

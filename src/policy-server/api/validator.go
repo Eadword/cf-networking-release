@@ -21,9 +21,13 @@ func (v *Validator) ValidatePolicies(policies []Policy) error {
 		if policy.Source.ID == "" {
 			return errors.New("missing source id")
 		}
-		if policy.Destination.ID == "" {
-			return errors.New("missing destination id")
+
+		if policy.Destination.Type != "ip" {
+			if policy.Destination.ID == "" {
+				return errors.New("missing destination id")
+			}
 		}
+
 		if policy.Destination.Protocol != "udp" && policy.Destination.Protocol != "tcp" {
 			return errors.New("invalid destination protocol, specify either udp or tcp")
 		}

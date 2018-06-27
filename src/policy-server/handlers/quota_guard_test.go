@@ -42,6 +42,10 @@ var _ = Describe("QuotaGuard", func() {
 				Source:      store.Source{ID: "some-other-app-guid"},
 				Destination: store.Destination{ID: "yet-another-guid"},
 			},
+			{
+				Source:      store.Source{Type: "app", ID: "some-other-app-guid"},
+				Destination: store.Destination{Type: "ip", IPs: []store.IPRange{{Start: "1.2.3.4", End: "1.2.3.5"}}},
+			},
 		}
 		fakeStore.ByGuidsReturns([]store.Policy{}, nil)
 	})

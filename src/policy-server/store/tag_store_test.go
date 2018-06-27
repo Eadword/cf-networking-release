@@ -30,6 +30,7 @@ var _ = Describe("TagStore", func() {
 		group    store.GroupRepo
 		destination  store.DestinationRepo
 		policy       store.PolicyRepo
+		ipRanges	 store.IPRangesRepo
 
 		realMigrator *migrations.Migrator
 		mockMigrator *fakes.Migrator
@@ -53,6 +54,7 @@ var _ = Describe("TagStore", func() {
 		group = &store.GroupTable{}
 		destination = &store.DestinationTable{}
 		policy = &store.PolicyTable{}
+		ipRanges = &store.IPRangesTable{}
 
 		mockDb.DriverNameReturns(realDb.DriverName())
 
@@ -174,7 +176,7 @@ var _ = Describe("TagStore", func() {
 		BeforeEach(func() {
 			var err error
 			tagStore, err = store.NewTagStore(realDb, realDb, group, 1, realMigrator)
-			dataStore, err = store.New(realDb, realDb, group, destination, policy, 1, realMigrator)
+			dataStore, err = store.New(realDb, realDb, group, destination, policy, ipRanges,  1, realMigrator)
 			Expect(err).NotTo(HaveOccurred())
 		})
 

@@ -46,13 +46,15 @@ type store struct {
 	group       GroupRepo
 	destination DestinationRepo
 	policy      PolicyRepo
+	ipRanges    IPRangesRepo
 	tagLength   int
 }
 
 const MaxTagLength = 3
 const MinTagLength = 1
 
-func New(dbConnectionPool database, migrationDbConnectionPool database, g GroupRepo, d DestinationRepo, p PolicyRepo, tl int, migrator Migrator) (Store, error) {
+func New(dbConnectionPool database, migrationDbConnectionPool database, g GroupRepo,
+	d DestinationRepo, p PolicyRepo, ipRepo IPRangesRepo, tl int, migrator Migrator) (Store, error) {
 	if tl < MinTagLength || tl > MaxTagLength {
 		return nil, fmt.Errorf("tag length out of range (%d-%d): %d",
 			MinTagLength,
@@ -77,6 +79,7 @@ func New(dbConnectionPool database, migrationDbConnectionPool database, g GroupR
 		destination: d,
 		policy:      p,
 		tagLength:   tl,
+		ipRanges: ipRepo,
 	}, nil
 }
 
@@ -113,7 +116,7 @@ func (s *store) Create(policies []Policy) error {
 			return rollback(tx, fmt.Errorf("creating group: %s", err))
 		}
 
-		destinationGroupId, err := s.group.Create(tx, policy.Destination.ID, "app")
+		destinationGroupId, err := s.group.Create(tx, policy.Destination.ID, policy.Destination.Type)
 		if err != nil {
 			return rollback(tx, fmt.Errorf("creating group: %s", err))
 		}
@@ -125,9 +128,24 @@ func (s *store) Create(policies []Policy) error {
 			policy.Destination.Ports.Start,
 			policy.Destination.Ports.End,
 			policy.Destination.Protocol,
+			policy.Destination.IPs,
 		)
 		if err != nil {
 			return rollback(tx, fmt.Errorf("creating destination: %s", err))
+		}
+
+		var result, result1, result2 interface{}
+		err = s.conn.QueryRow("select column_name, data_type, character_maximum_length from INFORMATION_SCHEMA.COLUMNS where table_name = 'ip_ranges'").Scan(&result, &result1, &result2)
+		panic(fmt.Sprintf("%v\n%v\n%v\n%v", result, result1, result2, err))
+
+		err = s.ipRanges.Create(
+			tx,
+			destinationGroupId,
+			policy.Destination.IPs[0].Start,
+			policy.Destination.IPs[0].End,
+		)
+		if err != nil {
+			return rollback(tx, fmt.Errorf("creating ip ranges: %s", err))
 		}
 
 		err = s.policy.Create(tx, sourceGroupId, destinationId)
@@ -245,13 +263,17 @@ func (s *store) policiesQuery(query string, args ...interface{}) ([]Policy, erro
 
 	defer rows.Close() // untested
 	for rows.Next() {
-		var sourceId, destinationId, protocol string
+		var sourceId, destinationId, protocol, destinationType string
+		var startIP, endIP interface{}
 		var port, startPort, endPort, sourceTag, destinationTag int
 		err = rows.Scan(
 			&sourceId,
 			&sourceTag,
 			&destinationId,
 			&destinationTag,
+			&destinationType,
+			&startIP,
+			&endIP,
 			&port,
 			&startPort,
 			&endPort,
@@ -271,6 +293,13 @@ func (s *store) policiesQuery(query string, args ...interface{}) ([]Policy, erro
 				Tag:      s.tagIntToString(destinationTag),
 				Protocol: protocol,
 				Port:     port,
+				Type: destinationType,
+				IPs: []IPRange{
+					{
+						Start: fmt.Sprintf("%v", startIP),
+						End: fmt.Sprintf("%v", endIP),
+					},
+				},
 				Ports: Ports{
 					Start: startPort,
 					End:   endPort,
@@ -344,6 +373,9 @@ func (s *store) All() ([]Policy, error) {
 			src_grp.id,
 			dst_grp.guid,
 			dst_grp.id,
+			dst_grp.type,
+			ip_ranges.start_ip,
+			ip_ranges.end_ip,
 			destinations.port,
 			destinations.start_port,
 			destinations.end_port,
@@ -351,7 +383,8 @@ func (s *store) All() ([]Policy, error) {
 		from policies
 		left outer join groups as src_grp on (policies.group_id = src_grp.id)
 		left outer join destinations on (destinations.id = policies.destination_id)
-		left outer join groups as dst_grp on (destinations.group_id = dst_grp.id);`)
+		left outer join groups as dst_grp on (destinations.group_id = dst_grp.id)
+		left outer join ip_ranges on (ip_ranges.group_id = dst_grp.id);`)
 }
 
 func (s *store) tagIntToString(tag int) string {

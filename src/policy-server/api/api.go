@@ -19,15 +19,23 @@ type Policy struct {
 }
 
 type Source struct {
-	ID  string `json:"id"`
-	Tag string `json:"tag,omitempty"`
+	ID   string `json:"id"`
+	Tag  string `json:"tag,omitempty"`
+	Type string `json:"type,omitempty"`
 }
 
 type Destination struct {
-	ID       string `json:"id"`
-	Tag      string `json:"tag,omitempty"`
-	Protocol string `json:"protocol"`
-	Ports    Ports  `json:"ports"`
+	ID       string    `json:"id"`
+	Tag      string    `json:"tag,omitempty"`
+	Protocol string    `json:"protocol"`
+	Ports    Ports     `json:"ports"`
+	Type     string    `json:"type,omitempty"`
+	IPs      []IPRange `json:"ips,omitempty"`
+}
+
+type IPRange struct {
+	Start string `json:"start"`
+	End   string `json:"end"`
 }
 
 type Ports struct {
@@ -36,8 +44,8 @@ type Ports struct {
 }
 
 type Tag struct {
-	ID  string `json:"id"`
-	Tag string `json:"tag"`
+	ID   string `json:"id"`
+	Tag  string `json:"tag"`
 	Type string `json:"type"`
 }
 
