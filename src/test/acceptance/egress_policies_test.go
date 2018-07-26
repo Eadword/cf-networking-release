@@ -83,7 +83,7 @@ var _ = Describe("external connectivity", func() {
 		return checkRequest(appRoute+"proxy/example.com", 500, "example.com")
 	}
 
-	Describe("egress policy connectivity", func() {
+	FDescribe("egress policy connectivity", func() {
 		It("the app can reach the internet when egress policy is present", func(done Done) {
 			By("checking that the app cannot reach the internet using http and dns")
 			Eventually(cannotProxy, "10s", "1s").Should(Succeed())
@@ -98,10 +98,37 @@ var _ = Describe("external connectivity", func() {
 			Eventually(canProxy, "10s", "1s").Should(Succeed())
 			Consistently(canProxy, "2s", "0.5s").Should(Succeed())
 
+			By("deleting egress policy")
+			Expect(err).NotTo(HaveOccurred())
+			deleteEgressPolicy(cli, fmt.Sprintf(testEgressPolicies, appAGuid))
+
+			By("checking that the app cannot reach the internet using http and dns")
+			Eventually(cannotProxy, "10s", "1s").Should(Succeed())
+			Consistently(cannotProxy, "2s", "0.5s").Should(Succeed())
+
 			close(done)
 		}, 180 /* <-- overall spec timeout in seconds */)
 	})
 })
+
+func deleteEgressPolicy(cli *cf_cli_adapter.Adapter, payload string) {
+	payloadFile, err := ioutil.TempFile("", "")
+	Expect(err).NotTo(HaveOccurred())
+
+	_, err = payloadFile.Write([]byte(payload))
+	Expect(err).NotTo(HaveOccurred())
+
+	err = payloadFile.Close()
+	Expect(err).NotTo(HaveOccurred())
+
+	response, err := cli.Curl("DELETE", "/networking/v1/external/policies", payloadFile.Name())
+	Expect(err).NotTo(HaveOccurred())
+	Expect(response).To(MatchJSON(`{}`))
+
+	err = os.Remove(payloadFile.Name())
+	Expect(err).NotTo(HaveOccurred())
+}
+
 
 func createEgressPolicy(cli *cf_cli_adapter.Adapter, payload string) {
 	payloadFile, err := ioutil.TempFile("", "")
@@ -113,8 +140,9 @@ func createEgressPolicy(cli *cf_cli_adapter.Adapter, payload string) {
 	err = payloadFile.Close()
 	Expect(err).NotTo(HaveOccurred())
 
-	_, err = cli.Curl("POST", "/networking/v1/external/policies", payloadFile.Name())
+	response, err := cli.Curl("POST", "/networking/v1/external/policies", payloadFile.Name())
 	Expect(err).NotTo(HaveOccurred())
+	Expect(response).To(MatchJSON(`{}`))
 
 	err = os.Remove(payloadFile.Name())
 	Expect(err).NotTo(HaveOccurred())

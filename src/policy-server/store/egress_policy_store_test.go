@@ -180,6 +180,17 @@ var _ = Describe("EgressPolicyStore", func() {
 		})
 	})
 
+	Describe("DeleteWithTx", func(){
+
+		It("deletes the app source terminal", func(){
+
+
+
+		})
+
+
+	})
+
 	Describe("All", func() {
 		Context("when there are policies created", func() {
 			BeforeEach(func() {

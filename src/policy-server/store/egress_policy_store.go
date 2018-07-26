@@ -63,6 +63,13 @@ func (e *EgressPolicyStore) CreateWithTx(tx db.Transaction, policies []EgressPol
 }
 
 func (e *EgressPolicyStore) DeleteWithTx(_ db.Transaction, _ []EgressPolicy) error {
+	// Find the policy by guid
+	// extract src and dst terminals from it
+	// ensure they match
+	// remove the policy from the table
+	// for each src, dst
+	//   if no other policy references the terminal
+	//    remove terminal
 	panic("not implemented")
 }
 
